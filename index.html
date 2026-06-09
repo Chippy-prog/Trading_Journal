@@ -327,7 +327,7 @@ body::after{
 .panel-tab-body{flex:1;overflow-y:auto;}
 .panel-tab-body::-webkit-scrollbar{width:3px;}
 .panel-tab-body::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}
-.tab-content{display:none;padding:0 0 env(safe-area-inset-bottom,16px);}
+.tab-content{display:none;padding:0 0 8px;}
 .tab-content.active{display:block;}
 
 /* ════════════════════════════════════════
@@ -369,7 +369,7 @@ body::after{
 .no-trades{text-align:center;padding:20px 16px;color:var(--text3);font-size:12px;font-family:var(--mono);letter-spacing:0.06em;}
 
 /* ADD TRADE SECTION */
-.add-trade-section{padding:14px 16px 0;border-top:1px solid var(--border);margin-top:10px;}
+.add-trade-section{padding:14px 16px 8px;border-top:1px solid var(--border);margin-top:10px;}
 .add-trade-title{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-bottom:11px;}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;}
 .form-row.single{grid-template-columns:1fr;}
@@ -432,10 +432,11 @@ option{background:var(--bg2);color:var(--text);}
 .submit-btn{
   width:100%;background:var(--green2);border:1px solid var(--green);color:var(--green);
   font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0.1em;
-  padding:11px;border-radius:var(--rsm);cursor:pointer;transition:all 0.18s;
-  margin-top:4px;margin-bottom:4px;position:relative;overflow:hidden;text-transform:uppercase;
+  padding:13px;border-radius:var(--rsm);cursor:pointer;transition:all 0.18s;
+  margin-top:4px;margin-bottom:16px;position:relative;overflow:hidden;text-transform:uppercase;
+  min-height:46px;
 }
-.submit-btn:hover{background:var(--green);color:var(--bg);}
+.submit-btn:hover,.submit-btn:active{background:var(--green);color:var(--bg);}
 
 /* ════════════════════════════════════════
    NOTES TAB
@@ -973,10 +974,18 @@ option{background:var(--bg2);color:var(--text);}
   .main{
     padding-bottom:calc(58px + env(safe-area-inset-bottom,0px));
   }
-  /* Panel should sit above bottom bar */
-  .panel,.settings-sheet{
-    bottom:calc(58px + env(safe-area-inset-bottom,0px));
-    border-radius:var(--rlg) var(--rlg) 0 0;
+  /* Panel sits full height, content padded above bottom bar */
+  .panel{
+    bottom:0!important;
+    max-height:calc(96vh - 58px)!important;
+    max-height:calc(96dvh - 58px)!important;
+  }
+  .panel-tab-body{
+    padding-bottom:calc(58px + env(safe-area-inset-bottom,8px))!important;
+  }
+  .settings-sheet{
+    bottom:0!important;
+    padding-bottom:calc(58px + env(safe-area-inset-bottom,0px));
   }
   /* Modals still go full bottom */
   .modal-overlay .modal,
@@ -1073,7 +1082,6 @@ option{background:var(--bg2);color:var(--text);}
   font-family:var(--mono);font-size:13px;padding:10px 13px;border-radius:10px;
   outline:none;margin-bottom:11px;transition:border-color 0.15s,box-shadow 0.15s;
   -webkit-appearance:none;
-  appearance:none;
 }
 .lock-input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,229,160,0.12);}
 .lock-input.shake{animation:lockShake 0.35s ease;}
@@ -2027,15 +2035,15 @@ function addTrade(){
     toast('Fill in Symbol, Lot, Entry & Exit','error');return;
   }
   const pnl=computePnl(entry,exit,lot,dir,symbol);
+  const trade={id:Date.now(),symbol,type,dir,lot,entry,exit,pnl,notes:tNotes};
   if(!trades[selectedDate])trades[selectedDate]=[];
-  trades[selectedDate].push(t);
+  trades[selectedDate].push(trade);
   saveTrades();
-  // jump to trades tab
   switchPanelTab('trades',document.querySelector('.panel-tab'));
   renderTradeList();
   renderCalendar();
   clearForm();
-  toast(`${symbol} logged · ${fmtPnl(pnl)} ${pnl>=0?'Win':'Loss'}`,'success');
+  toast(symbol+' logged · '+fmtPnl(pnl)+' '+(pnl>=0?'Win':'Loss'),'success');
 }
 
 // ══════════════════════════════════════════
