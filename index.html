@@ -1047,14 +1047,14 @@ option{background:var(--bg2);color:var(--text);}
 /* ════════════════════════════════════════
    LOCK SCREEN
 ════════════════════════════════════════ */
-#lockScreen{
+#authScreen{
   position:fixed;inset:0;z-index:999;
   background:var(--bg);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:24px;
+  padding:24px;overflow-y:auto;
   transition:opacity 0.35s,transform 0.35s;
 }
-#lockScreen.unlocking{opacity:0;transform:scale(1.04);pointer-events:none;}
+#authScreen.unlocking{opacity:0;transform:scale(1.04);pointer-events:none;}
 .lock-logo{
   font-family:var(--mono);font-size:28px;font-weight:700;
   color:var(--green);letter-spacing:0.12em;margin-bottom:4px;
@@ -1490,174 +1490,138 @@ option{background:var(--bg2);color:var(--text);}
         <option value="¥">¥ JPY</option>
       </select>
     </div>
-    <div class="settings-section-label">Profile & Security</div>
-    <div class="settings-row" style="cursor:pointer" onclick="openChangePinModal()">
-      <div><div class="settings-row-label">🔑 Change PIN</div><div class="settings-row-sub">Update your 4-digit PIN</div></div>
-      <span style="color:var(--text3);font-size:13px">›</span>
-    </div>
-    <div class="settings-row" style="cursor:pointer" onclick="openChangeAdminPin()">
-      <div><div class="settings-row-label">🛡 Change Admin PIN</div><div class="settings-row-sub">Default: 0000</div></div>
-      <span style="color:var(--text3);font-size:13px">›</span>
+    <div class="settings-section-label">Account</div>
+    <div class="settings-row">
+      <div><div class="settings-row-label">Signed in as</div><div class="settings-row-sub" id="settingsUsername">—</div></div>
     </div>
     <div class="settings-row" style="cursor:pointer" onclick="closeSettings();lockScreen();">
-      <div><div class="settings-row-label">🔒 Lock & Switch Profile</div><div class="settings-row-sub">Return to login screen</div></div>
+      <div><div class="settings-row-label">🔒 Sign Out</div><div class="settings-row-sub">Return to login screen</div></div>
       <span style="color:var(--text3);font-size:13px">›</span>
     </div>
     <div class="settings-section-label">Data</div>
     <button class="settings-export-btn" onclick="exportData()">⬇ Export Journal (JSON)</button>
     <button class="settings-danger-btn" id="clearDataBtn" onclick="clearDataConfirm()">✕ Clear My Data</button>
-    <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center;margin-top:12px;letter-spacing:0.06em;">SV MEMO · Advanced Trade Journal · v3.1</div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center;margin-top:12px;letter-spacing:0.06em;">SV MEMO · Advanced Trade Journal · v4.0 · Supabase Sync</div>
   </div>
 </div>
 
-<!-- ════ LOCK SCREEN ════ -->
-<div id="lockScreen">
-  <div class="lock-logo">SV MEMO</div>
+<!-- ════ AUTH SCREEN ════ -->
+<div id="authScreen">
+  <div class="lock-logo"><i class="fa-solid fa-chart-line"></i> SV MEMO</div>
   <div class="lock-logo-sub">Advanced Trade Journal</div>
   <div class="lock-card">
     <div class="lock-mode-tabs">
-      <button class="lock-mode-tab active" id="tabLogin" onclick="lockSwitchMode('login')">Sign In</button>
-      <button class="lock-mode-tab" id="tabRegister" onclick="lockSwitchMode('register')">New Profile</button>
+      <button class="lock-mode-tab active" id="tabLogin" onclick="authSwitchMode('login')">Sign In</button>
+      <button class="lock-mode-tab" id="tabRegister" onclick="authSwitchMode('register')">Register</button>
     </div>
 
-    <!-- LOGIN SECTION -->
-    <div class="lock-section active" id="lockLogin">
-      <div class="lock-label">Select Profile</div>
-      <div class="lock-profiles-list" id="lockProfilesList"></div>
-      <div class="lock-label">Enter PIN</div>
-      <div class="pin-display" id="pinDisplay">
-        <div class="pin-dot" id="pd0"></div>
-        <div class="pin-dot" id="pd1"></div>
-        <div class="pin-dot" id="pd2"></div>
-        <div class="pin-dot" id="pd3"></div>
-      </div>
-      <div class="pin-pad">
-        <div class="pin-key" onclick="pinKey('1')">1</div>
-        <div class="pin-key" onclick="pinKey('2')">2</div>
-        <div class="pin-key" onclick="pinKey('3')">3</div>
-        <div class="pin-key" onclick="pinKey('4')">4</div>
-        <div class="pin-key" onclick="pinKey('5')">5</div>
-        <div class="pin-key" onclick="pinKey('6')">6</div>
-        <div class="pin-key" onclick="pinKey('7')">7</div>
-        <div class="pin-key" onclick="pinKey('8')">8</div>
-        <div class="pin-key" onclick="pinKey('9')">9</div>
-        <div class="pin-key clear" onclick="pinClear()">CLR</div>
-        <div class="pin-key" onclick="pinKey('0')">0</div>
-        <div class="pin-key del" onclick="pinDel()">⌫</div>
-      </div>
+    <!-- LOGIN -->
+    <div class="lock-section active" id="authLogin">
+      <div class="lock-label">Email</div>
+      <input class="lock-input" id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email">
+      <div class="lock-label">Password</div>
+      <input class="lock-input" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password">
       <div class="lock-err" id="loginErr"></div>
+      <button class="lock-btn primary" id="loginBtn" onclick="doLogin()">
+        <span id="loginBtnText">Sign In</span>
+      </button>
+      <button class="lock-btn ghost" onclick="doForgotPassword()" style="margin-top:2px">Forgot password?</button>
     </div>
 
-    <!-- REGISTER SECTION -->
-    <div class="lock-section" id="lockRegister">
+    <!-- REGISTER -->
+    <div class="lock-section" id="authRegister">
       <div class="lock-label">Username</div>
-      <input class="lock-input" id="regName" placeholder="e.g. Trader1" maxlength="20" autocomplete="off">
-      <div class="lock-label">Set 4-Digit PIN</div>
-      <input class="lock-input" id="regPin" type="password" inputmode="numeric" placeholder="••••" maxlength="4" autocomplete="new-password">
-      <div class="lock-label">Confirm PIN</div>
-      <input class="lock-input" id="regPin2" type="password" inputmode="numeric" placeholder="••••" maxlength="4" autocomplete="new-password">
+      <input class="lock-input" id="regUsername" placeholder="e.g. Trader1" maxlength="24" autocomplete="off">
+      <div class="lock-label">Email</div>
+      <input class="lock-input" id="regEmail" type="email" placeholder="you@example.com" autocomplete="email">
+      <div class="lock-label">Password</div>
+      <input class="lock-input" id="regPassword" type="password" placeholder="min 6 characters" autocomplete="new-password">
       <div class="lock-err" id="regErr"></div>
-      <button class="lock-btn primary" onclick="registerProfile()">Create Profile</button>
-      <button class="lock-btn ghost" onclick="lockSwitchMode('login')">Back to Sign In</button>
+      <button class="lock-btn primary" id="registerBtn" onclick="doRegister()">
+        <span id="registerBtnText">Create Account</span>
+      </button>
+      <button class="lock-btn ghost" onclick="authSwitchMode('login')">Back to Sign In</button>
     </div>
 
   </div>
   <div class="lock-footer">
-    Data stored on this device · <span class="lock-admin-link" onclick="showAdminLogin()">Admin</span>
-  </div>
-</div>
-
-<!-- ADMIN LOGIN MODAL -->
-<div class="modal-overlay" id="adminModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Admin Access</div>
-    <div class="form-group" style="margin-bottom:10px">
-      <label class="form-label">Admin PIN (default: 0000)</label>
-      <input class="form-input" id="adminPinInput" type="password" inputmode="numeric" placeholder="••••" maxlength="4">
-    </div>
-    <div class="lock-err" id="adminErr" style="margin-bottom:6px"></div>
-    <div class="modal-actions">
-      <button class="modal-btn cancel" onclick="closeAdminModal()">Cancel</button>
-      <button class="modal-btn save" onclick="submitAdminPin()">Unlock</button>
-    </div>
-  </div>
-</div>
-
-<!-- CHANGE PIN MODAL -->
-<div class="modal-overlay" id="changePinModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Change PIN</div>
-    <div class="form-row single">
-      <div class="form-group"><label class="form-label">Current PIN</label><input class="form-input" id="cp-current" type="password" inputmode="numeric" placeholder="••••" maxlength="4"></div>
-    </div>
-    <div class="form-row single">
-      <div class="form-group"><label class="form-label">New PIN</label><input class="form-input" id="cp-new" type="password" inputmode="numeric" placeholder="••••" maxlength="4"></div>
-    </div>
-    <div class="form-row single">
-      <div class="form-group"><label class="form-label">Confirm New PIN</label><input class="form-input" id="cp-confirm" type="password" inputmode="numeric" placeholder="••••" maxlength="4"></div>
-    </div>
-    <div class="lock-err" id="cpErr" style="margin-bottom:6px"></div>
-    <div class="modal-actions">
-      <button class="modal-btn cancel" onclick="closeChangePinModal()">Cancel</button>
-      <button class="modal-btn save" onclick="saveChangedPin()">Update PIN</button>
-    </div>
+    Data synced across all your devices via Supabase
   </div>
 </div>
 
 <script>
 // ══════════════════════════════════════════
-// PROFILE / AUTH SYSTEM
+// SUPABASE CONFIG
 // ══════════════════════════════════════════
-const PROFILES_INDEX_KEY = 'svmemo_profiles_index';
-const ADMIN_KEY          = 'svmemo_admin_pin';
-const SESSION_KEY        = 'svmemo_session';
-const DEFAULT_ADMIN_PIN  = '0000';
-let activeProfile = null;
+const SUPA_URL  = 'https://ekadaaxcsypltoqisyfy.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrYWRhYXhjc3lwbHRvcWlzeWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjQxMjIsImV4cCI6MjA5NjcwMDEyMn0.6nHdAkH1ZON02ZdHiAx_eRUp7XDF5eyKxFzwgfCCQ4c';
+const SUPA_HEADERS = {
+  'Content-Type':  'application/json',
+  'apikey':        SUPA_KEY,
+  'Authorization': 'Bearer ' + SUPA_KEY
+};
 
-function hashPin(pin){
-  let h=0;
-  for(let c of String(pin)){h=(Math.imul(31,h)+c.charCodeAt(0))|0;}
-  return h.toString(16);
+// Inject Supabase auth token once logged in
+let supaToken = null;
+function authHeaders(){
+  return {
+    'Content-Type':  'application/json',
+    'apikey':        SUPA_KEY,
+    'Authorization': 'Bearer ' + (supaToken || SUPA_KEY)
+  };
 }
-function profileKey(name,suffix){ return `svmemo_p_${name.toLowerCase()}_${suffix}`; }
-function getProfileIndex(){ return JSON.parse(localStorage.getItem(PROFILES_INDEX_KEY)||'[]'); }
-function saveProfileIndex(arr){ localStorage.setItem(PROFILES_INDEX_KEY,JSON.stringify(arr)); }
-function profileExists(name){ return getProfileIndex().some(p=>p.name.toLowerCase()===name.toLowerCase()); }
-function getProfileMeta(name){
-  return getProfileIndex().find(p=>p.name.toLowerCase()===name.toLowerCase())||null;
+
+async function supaGet(table, filter=''){
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${filter}`, { headers: authHeaders() });
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
 }
-function createProfile(name,pin){
-  if(profileExists(name)) return false;
-  const idx=getProfileIndex();
-  idx.push({name,pinHash:hashPin(pin),created:Date.now()});
-  saveProfileIndex(idx);
-  localStorage.setItem(profileKey(name,'trades'),'{}');
-  localStorage.setItem(profileKey(name,'notes'),'[]');
-  localStorage.setItem(profileKey(name,'daynotes'),'{}');
-  localStorage.setItem(profileKey(name,'settings'),JSON.stringify({currency:'$',theme:'dark'}));
-  return true;
+async function supaUpsert(table, body){
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(body)
+  });
+  if(!r.ok) throw new Error(await r.text());
 }
-function verifyPin(name,pin){
-  const meta=getProfileMeta(name);
-  return meta && meta.pinHash===hashPin(pin);
+async function supaDelete(table, filter){
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${filter}`, {
+    method: 'DELETE', headers: authHeaders()
+  });
+  if(!r.ok) throw new Error(await r.text());
 }
-function getAdminPinHash(){ return localStorage.getItem(ADMIN_KEY)||hashPin(DEFAULT_ADMIN_PIN); }
-function verifyAdmin(pin){ return hashPin(pin)===getAdminPinHash(); }
-function setAdminPin(newPin){ localStorage.setItem(ADMIN_KEY,hashPin(newPin)); }
-function loadProfileData(name){
-  trades   = JSON.parse(localStorage.getItem(profileKey(name,'trades'))   ||'{}');
-  notes    = JSON.parse(localStorage.getItem(profileKey(name,'notes'))    ||'[]');
-  dayNotes = JSON.parse(localStorage.getItem(profileKey(name,'daynotes'))||'{}');
-  settings = JSON.parse(localStorage.getItem(profileKey(name,'settings'))||'{"currency":"$","theme":"dark"}');
-  activeProfile=name;
-  sessionStorage.setItem(SESSION_KEY,name);
+
+// ── Supabase Auth ──
+async function supaSignUp(email, password, username){
+  const r = await fetch(`${SUPA_URL}/auth/v1/signup`, {
+    method:'POST', headers: SUPA_HEADERS,
+    body: JSON.stringify({ email, password, data:{ username } })
+  });
+  return r.json();
 }
-function deleteProfile(name){
-  ['trades','notes','daynotes','settings'].forEach(s=>localStorage.removeItem(profileKey(name,s)));
-  const idx=getProfileIndex().filter(p=>p.name.toLowerCase()!==name.toLowerCase());
-  saveProfileIndex(idx);
+async function supaSignIn(email, password){
+  const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+    method:'POST', headers: SUPA_HEADERS,
+    body: JSON.stringify({ email, password })
+  });
+  return r.json();
+}
+async function supaSignOut(){
+  await fetch(`${SUPA_URL}/auth/v1/logout`, {
+    method:'POST', headers: authHeaders()
+  });
+}
+async function supaGetUser(){
+  const r = await fetch(`${SUPA_URL}/auth/v1/user`, { headers: authHeaders() });
+  if(!r.ok) return null;
+  return r.json();
+}
+async function supaResetPassword(email){
+  const r = await fetch(`${SUPA_URL}/auth/v1/recover`, {
+    method:'POST', headers: SUPA_HEADERS,
+    body: JSON.stringify({ email })
+  });
+  return r.json();
 }
 
 // ══════════════════════════════════════════
@@ -1666,17 +1630,112 @@ function deleteProfile(name){
 let trades   = {};
 let notes    = [];
 let dayNotes = {};
-let settings = {currency:'$',theme:'dark'};
+let settings = {currency:'$', theme:'dark'};
+let currentUserId   = null;
+let currentUsername = null;
 
 let currentYear, currentMonth, selectedDate, historyFilter = 'all';
 let noteMoodSelected = '';
 let clearConfirmTimer = null;
 const today = new Date();
 
-function saveTrades(){ if(activeProfile) localStorage.setItem(profileKey(activeProfile,'trades'),JSON.stringify(trades)); }
-function saveNotes(){ if(activeProfile) localStorage.setItem(profileKey(activeProfile,'notes'),JSON.stringify(notes)); }
-function saveDayNotes(){ if(activeProfile) localStorage.setItem(profileKey(activeProfile,'daynotes'),JSON.stringify(dayNotes)); }
-function saveSettings(){ if(activeProfile) localStorage.setItem(profileKey(activeProfile,'settings'),JSON.stringify(settings)); }
+function getDateKey(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function getDayTrades(k){return trades[k]||[];}
+function calcDayPnl(k){return getDayTrades(k).reduce((s,t)=>s+(t.pnl||0),0);}
+function cur(){return settings.currency||'$';}
+function fmtPnl(v){return(v>=0?'+ ':' -')+cur()+Math.abs(v).toFixed(2);}
+
+// ── Save / Load from Supabase ──
+// Trades stored as one row per date_key, data = array of trade objects
+async function saveTrades(){
+  if(!currentUserId) return;
+  // Save all date keys that are dirty — we just resave everything for simplicity
+  const rows = Object.keys(trades).map(dk => ({
+    user_id: currentUserId,
+    date_key: dk,
+    data: trades[dk]
+  }));
+  if(!rows.length) return;
+  try { await supaUpsert('trades', rows); } catch(e){ console.warn('saveTrades',e); }
+}
+
+async function saveNotes(){
+  if(!currentUserId) return;
+  try {
+    // Delete all existing notes for user then reinsert
+    await supaDelete('journal_notes', `user_id=eq.${currentUserId}`);
+    if(notes.length){
+      const rows = notes.map(n => ({ user_id: currentUserId, data: n }));
+      await supaUpsert('journal_notes', rows);
+    }
+  } catch(e){ console.warn('saveNotes',e); }
+}
+
+async function saveDayNotes(){
+  if(!currentUserId) return;
+  const rows = Object.keys(dayNotes).map(dk => ({
+    user_id: currentUserId,
+    date_key: dk,
+    data: dayNotes[dk]
+  }));
+  if(!rows.length) return;
+  try { await supaUpsert('day_notes', rows); } catch(e){ console.warn('saveDayNotes',e); }
+}
+
+async function saveSettings(){
+  if(!currentUserId) return;
+  try {
+    await supaUpsert('profiles', { id: currentUserId, username: currentUsername, settings });
+  } catch(e){ console.warn('saveSettings',e); }
+}
+
+async function loadAllData(){
+  try {
+    // Trades
+    const tRows = await supaGet('trades', `user_id=eq.${currentUserId}&select=date_key,data`);
+    trades = {};
+    tRows.forEach(r => { trades[r.date_key] = r.data; });
+
+    // Day notes
+    const dnRows = await supaGet('day_notes', `user_id=eq.${currentUserId}&select=date_key,data`);
+    dayNotes = {};
+    dnRows.forEach(r => { dayNotes[r.date_key] = r.data; });
+
+    // Journal notes
+    const nRows = await supaGet('journal_notes', `user_id=eq.${currentUserId}&select=data&order=id.desc`);
+    notes = nRows.map(r => r.data);
+
+    // Settings from profiles
+    const pRows = await supaGet('profiles', `id=eq.${currentUserId}&select=username,settings`);
+    if(pRows.length && pRows[0].settings) {
+      settings = { ...settings, ...pRows[0].settings };
+    }
+    if(pRows.length && pRows[0].username) {
+      currentUsername = pRows[0].username;
+    }
+  } catch(e){
+    console.warn('loadAllData error', e);
+  }
+}
+
+// ── Single-trade save (fast path) ──
+async function saveTradesForDate(dateKey){
+  if(!currentUserId) return;
+  try {
+    if(!trades[dateKey] || trades[dateKey].length === 0){
+      await supaDelete('trades', `user_id=eq.${currentUserId}&date_key=eq.${dateKey}`);
+    } else {
+      await supaUpsert('trades', [{ user_id: currentUserId, date_key: dateKey, data: trades[dateKey] }]);
+    }
+  } catch(e){ console.warn('saveTradesForDate',e); }
+}
+
+async function saveSingleDayNote(dateKey){
+  if(!currentUserId || !dayNotes[dateKey]) return;
+  try {
+    await supaUpsert('day_notes', [{ user_id: currentUserId, date_key: dateKey, data: dayNotes[dateKey] }]);
+  } catch(e){ console.warn('saveSingleDayNote',e); }
+}
 
 function getDateKey(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
 function getDayTrades(k){return trades[k]||[];}
@@ -1811,7 +1870,9 @@ function applyTheme(t){
   document.documentElement.setAttribute('data-theme',t);
   const icon=document.getElementById('themeToggle').querySelector('i');
   if(icon) icon.className=t==='dark'?'fa-solid fa-moon':'fa-solid fa-sun';
-  settings.theme=t; saveSettings();
+  settings.theme=t;
+  localStorage.setItem('svmemo_last_theme', t);
+  saveSettings();
 }
 function toggleTheme(){
   applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
@@ -1824,6 +1885,8 @@ applyTheme(settings.theme||'dark');
 // ══════════════════════════════════════════
 function openSettings(){
   document.getElementById('currencySelect').value = settings.currency||'$';
+  const unEl = document.getElementById('settingsUsername');
+  if(unEl) unEl.textContent = currentUsername || '—';
   document.getElementById('settingsOverlay').classList.add('open');
   document.getElementById('settingsSheet').classList.add('open');
 }
@@ -1844,15 +1907,20 @@ function clearDataConfirm(){
   const btn=document.getElementById('clearDataBtn');
   if(!clearConfirmTimer){
     btn.textContent='⚠ Tap Again to Confirm';
-    clearConfirmTimer=setTimeout(()=>{btn.textContent='✕ Clear All Data';clearConfirmTimer=null;},3000);
+    clearConfirmTimer=setTimeout(()=>{btn.textContent='✕ Clear My Data';clearConfirmTimer=null;},3000);
   } else {
     clearTimeout(clearConfirmTimer);clearConfirmTimer=null;
-    trades={};notes=[];dayNotes={};
-    saveTrades();saveNotes();saveDayNotes();
-    renderCalendar();renderNotes();
-    btn.textContent='✕ Clear All Data';
-    closeSettings();
-    toast('All data cleared','info');
+    btn.textContent='✕ Clear My Data';
+    if(!currentUserId){closeSettings();return;}
+    Promise.all([
+      supaDelete('trades',`user_id=eq.${currentUserId}`),
+      supaDelete('day_notes',`user_id=eq.${currentUserId}`),
+      supaDelete('journal_notes',`user_id=eq.${currentUserId}`)
+    ]).then(()=>{
+      trades={};notes=[];dayNotes={};
+      renderCalendar();renderNotes();closeSettings();
+      toast('All data cleared','info');
+    }).catch(()=>toast('Error clearing data','error'));
   }
 }
 
@@ -2038,7 +2106,7 @@ function addTrade(){
   const trade={id:Date.now(),symbol,type,dir,lot,entry,exit,pnl,notes:tNotes};
   if(!trades[selectedDate])trades[selectedDate]=[];
   trades[selectedDate].push(trade);
-  saveTrades();
+  saveTradesForDate(selectedDate);  // fast path — only saves this date
   switchPanelTab('trades',document.querySelector('.panel-tab'));
   renderTradeList();
   renderCalendar();
@@ -2060,8 +2128,9 @@ function deleteTrade(dateKey,idx,btn){
   }
   clearTimeout(deleteConfirmTimers[k]);delete deleteConfirmTimers[k];
   trades[dateKey].splice(idx,1);
-  if(!trades[dateKey].length)delete trades[dateKey];
-  saveTrades();renderTradeList();renderCalendar();toast('Trade deleted','info');
+  if(!trades[dateKey].length) delete trades[dateKey];
+  saveTradesForDate(dateKey);
+  renderTradeList();renderCalendar();toast('Trade deleted','info');
 }
 
 // ══════════════════════════════════════════
@@ -2162,7 +2231,7 @@ function saveEdit(){
   t.exit=parseFloat(document.getElementById('e-exit').value);
   t.notes=document.getElementById('e-notes').value.trim();
   t.pnl=computePnl(t.entry,t.exit,t.lot,t.dir,t.symbol);
-  saveTrades();closeEditModal();renderTradeList();renderCalendar();
+  saveTradesForDate(editDateKey);closeEditModal();renderTradeList();renderCalendar();
   if(!document.getElementById('view-history').classList.contains('hidden'))renderHistory();
   toast('Trade updated','success');
 }
@@ -2211,13 +2280,13 @@ function setMood(m,btn){
     document.querySelectorAll('#moodRow .mood-btn').forEach(b=>b.classList.remove('active-mood'));
     btn.classList.add('active-mood');
   }
-  saveDayNotes();renderCalendar();
+  saveSingleDayNote(selectedDate);renderCalendar();
 }
 function saveDayNote(){
   if(!selectedDate)return;
   if(!dayNotes[selectedDate])dayNotes[selectedDate]={};
   dayNotes[selectedDate].text=document.getElementById('dayNoteText').value;
-  saveDayNotes();
+  saveSingleDayNote(selectedDate);
   const ind=document.getElementById('noteSavedIndicator');
   ind.classList.add('show');
   setTimeout(()=>ind.classList.remove('show'),1800);
@@ -2252,18 +2321,19 @@ function saveNewNote(){
     date:new Date().toISOString()
   };
   notes.unshift(note);
-  saveNotes();closeNoteModal();renderNotes();
+  saveNotes().catch(()=>{});
+  closeNoteModal();renderNotes();
   toast('Note saved','success');
 }
 function deleteNote(id){
   notes=notes.filter(n=>n.id!==id);
-  saveNotes();renderNotes();toast('Note deleted','info');
+  saveNotes().catch(()=>{});renderNotes();toast('Note deleted','info');
 }
 function togglePinNote(id){
   const n=notes.find(n=>n.id===id);
   if(n){n.pinned=!n.pinned;}
   notes.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0));
-  saveNotes();renderNotes();
+  saveNotes().catch(()=>{});renderNotes();
 }
 function renderNotes(){
   const list=document.getElementById('notesList');
@@ -2715,204 +2785,182 @@ const mlink=document.createElement('link');mlink.rel='manifest';mlink.href=URL.c
 document.head.appendChild(mlink);
 
 // ══════════════════════════════════════════
-// LOCK SCREEN JS
+// AUTH SCREEN JS
 // ══════════════════════════════════════════
-let loginPin = '';
-let loginSelectedProfile = '';
-let adminUnlocked = false;
-
-function lockSwitchMode(mode){
-  document.getElementById('lockLogin').classList.toggle('active', mode==='login');
-  document.getElementById('lockRegister').classList.toggle('active', mode==='register');
+function authSwitchMode(mode){
+  document.getElementById('authLogin').classList.toggle('active', mode==='login');
+  document.getElementById('authRegister').classList.toggle('active', mode==='register');
   document.getElementById('tabLogin').classList.toggle('active', mode==='login');
   document.getElementById('tabRegister').classList.toggle('active', mode==='register');
-  loginPin=''; updatePinDisplay();
   document.getElementById('loginErr').textContent='';
   document.getElementById('regErr').textContent='';
 }
 
-function renderLockProfiles(){
-  const idx=getProfileIndex();
-  const list=document.getElementById('lockProfilesList');
-  if(!idx.length){
-    list.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-align:center;padding:8px 0;letter-spacing:0.07em">No profiles yet — create one →</div>';
-    return;
-  }
-  list.innerHTML=idx.map(p=>`
-    <div class="lock-profile-item ${loginSelectedProfile===p.name?'selected':''}" onclick="selectLockProfile('${p.name}')">
-      <div class="lock-profile-avatar">${p.name[0].toUpperCase()}</div>
-      <div>
-        <div class="lock-profile-name">${p.name}</div>
-        <div class="lock-profile-meta">Created ${new Date(p.created).toLocaleDateString()}</div>
-      </div>
-    </div>`).join('');
-  // Auto-select if only one
-  if(idx.length===1 && !loginSelectedProfile) selectLockProfile(idx[0].name);
+function setAuthLoading(btn, textEl, loading, text){
+  btn.disabled = loading;
+  textEl.innerHTML = loading
+    ? '<i class="fa-solid fa-spinner fa-spin"></i> Please wait…'
+    : text;
 }
 
-function selectLockProfile(name){
-  loginSelectedProfile=name;
-  loginPin=''; updatePinDisplay();
-  document.getElementById('loginErr').textContent='';
-  renderLockProfiles();
-}
-
-function pinKey(k){
-  if(loginPin.length>=4) return;
-  loginPin+=k;
-  updatePinDisplay();
-  if(loginPin.length===4) setTimeout(attemptLogin, 120);
-}
-function pinDel(){ loginPin=loginPin.slice(0,-1); updatePinDisplay(); }
-function pinClear(){ loginPin=''; updatePinDisplay(); }
-
-function updatePinDisplay(){
-  for(let i=0;i<4;i++){
-    document.getElementById('pd'+i).classList.toggle('filled', i<loginPin.length);
+async function doLogin(){
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl    = document.getElementById('loginErr');
+  const btn      = document.getElementById('loginBtn');
+  const txtEl    = document.getElementById('loginBtnText');
+  if(!email || !password){ errEl.textContent='Enter email and password'; return; }
+  setAuthLoading(btn, txtEl, true);
+  errEl.textContent = '';
+  try {
+    const res = await supaSignIn(email, password);
+    if(res.error || !res.access_token){
+      errEl.textContent = res.error?.message || res.error_description || 'Sign in failed';
+      setAuthLoading(btn, txtEl, false, 'Sign In');
+      return;
+    }
+    supaToken = res.access_token;
+    // Persist session
+    localStorage.setItem('svmemo_token', res.access_token);
+    localStorage.setItem('svmemo_refresh', res.refresh_token);
+    currentUserId = res.user.id;
+    currentUsername = res.user.user_metadata?.username || email.split('@')[0];
+    await enterApp();
+  } catch(e){
+    errEl.textContent = 'Network error — check connection';
+    setAuthLoading(btn, txtEl, false, 'Sign In');
   }
 }
 
-function attemptLogin(){
-  if(!loginSelectedProfile){
-    showLoginErr('Select a profile first'); loginPin=''; updatePinDisplay(); return;
-  }
-  if(verifyPin(loginSelectedProfile, loginPin) || adminUnlocked){
-    unlockIntoProfile(loginSelectedProfile);
-  } else {
-    showLoginErr('Wrong PIN — try again');
-    loginPin=''; updatePinDisplay();
-    document.querySelectorAll('.pin-display .pin-dot').forEach(d=>{
-      d.style.background='var(--red)';d.style.borderColor='var(--red)';
-    });
-    setTimeout(()=>{
-      document.querySelectorAll('.pin-display .pin-dot').forEach(d=>{
-        d.style.background='';d.style.borderColor='';
-      });
-    }, 500);
+async function doRegister(){
+  const username = document.getElementById('regUsername').value.trim();
+  const email    = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const errEl    = document.getElementById('regErr');
+  const btn      = document.getElementById('registerBtn');
+  const txtEl    = document.getElementById('registerBtnText');
+  if(!username){ errEl.textContent='Enter a username'; return; }
+  if(!email){ errEl.textContent='Enter your email'; return; }
+  if(password.length < 6){ errEl.textContent='Password must be at least 6 characters'; return; }
+  setAuthLoading(btn, txtEl, true);
+  errEl.textContent = '';
+  try {
+    const res = await supaSignUp(email, password, username);
+    if(res.error){
+      errEl.textContent = res.error.message || 'Registration failed';
+      setAuthLoading(btn, txtEl, false, 'Create Account');
+      return;
+    }
+    if(res.access_token){
+      // Auto-signed in
+      supaToken = res.access_token;
+      localStorage.setItem('svmemo_token', res.access_token);
+      localStorage.setItem('svmemo_refresh', res.refresh_token||'');
+      currentUserId = res.user.id;
+      currentUsername = username;
+      // Create profile row
+      try { await supaUpsert('profiles',[{id:currentUserId,username,settings}]); } catch(e){}
+      await enterApp();
+    } else {
+      // Email confirmation required
+      setAuthLoading(btn, txtEl, false, 'Create Account');
+      errEl.style.color='var(--green)';
+      errEl.textContent='✓ Check your email to confirm your account, then sign in.';
+    }
+  } catch(e){
+    errEl.textContent = 'Network error — check connection';
+    setAuthLoading(btn, txtEl, false, 'Create Account');
   }
 }
 
-function showLoginErr(msg){
-  document.getElementById('loginErr').textContent=msg;
-  setTimeout(()=>document.getElementById('loginErr').textContent='', 2500);
+async function doForgotPassword(){
+  const email = document.getElementById('loginEmail').value.trim();
+  if(!email){ document.getElementById('loginErr').textContent='Enter your email first'; return; }
+  try {
+    await supaResetPassword(email);
+    document.getElementById('loginErr').style.color='var(--green)';
+    document.getElementById('loginErr').textContent='✓ Password reset email sent';
+  } catch(e){
+    document.getElementById('loginErr').textContent='Failed to send reset email';
+  }
 }
 
-function unlockIntoProfile(name){
-  loadProfileData(name);
-  // Apply saved theme
+async function enterApp(){
+  // Load all cloud data
+  toast('Loading your data…','info',1800);
+  await loadAllData();
   applyTheme(settings.theme||'dark');
-  // Update profile badge + drawer
+  // Update header badges
+  const name = currentUsername || 'You';
   document.getElementById('profileBadge').style.display='flex';
   document.getElementById('profileBadgeAvatar').textContent=name[0].toUpperCase();
   document.getElementById('profileBadgeName').textContent=name;
   document.getElementById('drawerProfile').style.display='flex';
   document.getElementById('drawerAvatar').textContent=name[0].toUpperCase();
   document.getElementById('drawerProfileName').textContent=name;
-  // Animate lock screen out
-  const ls=document.getElementById('lockScreen');
-  ls.classList.add('unlocking');
-  setTimeout(()=>{ls.style.display='none';},380);
-  adminUnlocked=false;
-  loginPin=''; updatePinDisplay();
-  // Init app
+  // Hide auth screen
+  const as=document.getElementById('authScreen');
+  as.classList.add('unlocking');
+  setTimeout(()=>{ as.style.display='none'; },380);
+  // Boot app
   currentYear=today.getFullYear();
   currentMonth=today.getMonth();
   renderCalendar();
 }
 
-function registerProfile(){
-  const name=document.getElementById('regName').value.trim();
-  const pin=document.getElementById('regPin').value.trim();
-  const pin2=document.getElementById('regPin2').value.trim();
-  const errEl=document.getElementById('regErr');
-  if(!name){errEl.textContent='Enter a username';return;}
-  if(!/^[a-zA-Z0-9_]{1,20}$/.test(name)){errEl.textContent='Letters, numbers, underscore only';return;}
-  if(profileExists(name)){errEl.textContent='Profile name already taken';return;}
-  if(pin.length!==4||!/^\d{4}$/.test(pin)){errEl.textContent='PIN must be exactly 4 digits';return;}
-  if(pin!==pin2){errEl.textContent='PINs do not match';return;}
-  createProfile(name,pin);
-  document.getElementById('regName').value='';
-  document.getElementById('regPin').value='';
-  document.getElementById('regPin2').value='';
-  errEl.textContent='';
-  lockSwitchMode('login');
-  renderLockProfiles();
-  selectLockProfile(name);
-  toast('Profile created — enter your PIN','success');
-}
-
 function lockScreen(){
-  // Lock and show lock screen
-  activeProfile=null;
-  sessionStorage.removeItem(SESSION_KEY);
-  const ls=document.getElementById('lockScreen');
-  ls.style.display='flex';
-  ls.classList.remove('unlocking');
-  loginPin=''; loginSelectedProfile=''; adminUnlocked=false;
-  updatePinDisplay();
-  renderLockProfiles();
+  supaToken=null; currentUserId=null; currentUsername=null;
+  trades={}; notes=[]; dayNotes={};
+  localStorage.removeItem('svmemo_token');
+  localStorage.removeItem('svmemo_refresh');
+  const as=document.getElementById('authScreen');
+  as.style.display='flex';
+  as.classList.remove('unlocking');
   document.getElementById('profileBadge').style.display='none';
   document.getElementById('drawerProfile').style.display='none';
   document.getElementById('loginErr').textContent='';
+  document.getElementById('loginPassword').value='';
 }
 
-// Admin
-function showAdminLogin(){
-  document.getElementById('adminPinInput').value='';
-  document.getElementById('adminErr').textContent='';
-  document.getElementById('adminModal').classList.add('open');
-}
-function closeAdminModal(){ document.getElementById('adminModal').classList.remove('open'); }
-function submitAdminPin(){
-  const pin=document.getElementById('adminPinInput').value.trim();
-  if(verifyAdmin(pin)){
-    adminUnlocked=true;
-    closeAdminModal();
-    toast('Admin mode — select any profile','info');
-  } else {
-    document.getElementById('adminErr').textContent='Wrong admin PIN';
+// ── Try restore session on load ──
+async function tryRestoreSession(){
+  const token = localStorage.getItem('svmemo_token');
+  if(!token){ showAuthScreen(); return; }
+  supaToken = token;
+  try {
+    const user = await supaGetUser();
+    if(!user || user.error){
+      // Token expired — try refresh
+      const refresh = localStorage.getItem('svmemo_refresh');
+      if(refresh){
+        const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`,{
+          method:'POST', headers: SUPA_HEADERS,
+          body: JSON.stringify({refresh_token: refresh})
+        });
+        const res = await r.json();
+        if(res.access_token){
+          supaToken = res.access_token;
+          localStorage.setItem('svmemo_token', res.access_token);
+          localStorage.setItem('svmemo_refresh', res.refresh_token||refresh);
+          currentUserId = res.user.id;
+          currentUsername = res.user.user_metadata?.username || res.user.email.split('@')[0];
+          await enterApp(); return;
+        }
+      }
+      showAuthScreen(); return;
+    }
+    currentUserId = user.id;
+    currentUsername = user.user_metadata?.username || user.email.split('@')[0];
+    await enterApp();
+  } catch(e){
+    showAuthScreen();
   }
 }
 
-// Change PIN
-function openChangePinModal(){
-  document.getElementById('cp-current').value='';
-  document.getElementById('cp-new').value='';
-  document.getElementById('cp-confirm').value='';
-  document.getElementById('cpErr').textContent='';
-  document.getElementById('changePinModal').classList.add('open');
-  closeSettings();
-}
-function closeChangePinModal(){ document.getElementById('changePinModal').classList.remove('open'); }
-function saveChangedPin(){
-  if(!activeProfile){return;}
-  const current=document.getElementById('cp-current').value.trim();
-  const newPin=document.getElementById('cp-new').value.trim();
-  const confirm=document.getElementById('cp-confirm').value.trim();
-  const errEl=document.getElementById('cpErr');
-  if(!verifyPin(activeProfile, current) && !verifyAdmin(current)){errEl.textContent='Current PIN is wrong';return;}
-  if(newPin.length!==4||!/^\d{4}$/.test(newPin)){errEl.textContent='New PIN must be 4 digits';return;}
-  if(newPin!==confirm){errEl.textContent='PINs do not match';return;}
-  // Update stored PIN hash
-  const idx=getProfileIndex();
-  const p=idx.find(p=>p.name.toLowerCase()===activeProfile.toLowerCase());
-  if(p){ p.pinHash=hashPin(newPin); saveProfileIndex(idx); }
-  closeChangePinModal();
-  toast('PIN updated','success');
-}
-
-// Change Admin PIN
-function openChangeAdminPin(){
-  const cur=prompt('Current Admin PIN:');
-  if(cur===null) return;
-  if(!verifyAdmin(cur)){toast('Wrong admin PIN','error');return;}
-  const newp=prompt('New Admin PIN (4 digits):');
-  if(!newp||!/^\d{4}$/.test(newp)){toast('Invalid PIN','error');return;}
-  const conf=prompt('Confirm new Admin PIN:');
-  if(newp!==conf){toast('PINs do not match','error');return;}
-  setAdminPin(newp);
-  toast('Admin PIN updated','success');
-  closeSettings();
+function showAuthScreen(){
+  const as = document.getElementById('authScreen');
+  as.style.display='flex';
+  as.classList.remove('unlocking');
 }
 
 // ══════════════════════════════════════════
@@ -2944,17 +2992,8 @@ function clearDataConfirm(){
 // INIT
 // ══════════════════════════════════════════
 (function init(){
-  // Check for active session (tab still open)
-  const sess=sessionStorage.getItem(SESSION_KEY);
-  if(sess && profileExists(sess)){
-    unlockIntoProfile(sess);
-  } else {
-    // Show lock screen
-    renderLockProfiles();
-    // Apply system default theme while on lock screen
-    const pref=window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark';
-    applyTheme(pref);
-  }
+  applyTheme(localStorage.getItem('svmemo_last_theme') || 'dark');
+  tryRestoreSession();
 })();
 </script>
 </body>
